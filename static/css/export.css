@@ -1,0 +1,320 @@
+.export-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.export-container h1 {
+    font-size: 1.75rem;
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+}
+
+.export-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.export-card {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    position: relative;
+}
+
+.export-card:hover {
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+}
+
+.export-card.exporting {
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.export-card.success {
+    box-shadow: 0 0 0 2px var(--success-color);
+}
+
+.export-card.error {
+    box-shadow: 0 0 0 2px var(--error-color);
+}
+
+.export-status {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--gray-300);
+}
+
+.export-status.success {
+    background: var(--success-color);
+    animation: pulse-status 2s infinite;
+}
+
+.export-status.error {
+    background: var(--error-color);
+}
+
+.export-status.loading {
+    background: var(--primary-color);
+    animation: blink 1s infinite;
+}
+
+@keyframes pulse-status {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.export-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.export-card h3 {
+    font-size: 1.25rem;
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+}
+
+.export-card p {
+    color: var(--gray-500);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.export-formats {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.format-option {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--gray-600);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.format-option:hover {
+    background: var(--gray-100);
+}
+
+.format-option input[type="radio"],
+.format-option input[type="checkbox"] {
+    accent-color: var(--primary-color);
+}
+
+.format-badge {
+    padding: 0.25rem 0.75rem;
+    background: var(--gray-200);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--gray-600);
+}
+
+.export-options-detail {
+    margin: 1rem 0;
+    padding: 1rem 0;
+    border-top: 1px solid var(--gray-100);
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+    text-align: left;
+}
+
+.checkbox-option:last-child {
+    margin-bottom: 0;
+}
+
+.checkbox-option input[type="checkbox"] {
+    accent-color: var(--primary-color);
+    width: 16px;
+    height: 16px;
+}
+
+.date-range-inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.date-range-inputs input[type="date"] {
+    padding: 0.5rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.date-range-inputs span {
+    color: var(--gray-500);
+    font-size: 0.85rem;
+}
+
+.qr-input {
+    margin-top: 0.75rem;
+}
+
+.qr-input input[type="text"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.export-progress {
+    margin-top: 1rem;
+    text-align: left;
+}
+
+.export-progress .progress-bar {
+    height: 6px;
+    background: var(--gray-200);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.export-progress .progress-fill {
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.export-progress .progress-text {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+.export-history {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+.export-history h2 {
+    font-size: 1.25rem;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.poster-preview {
+    background: var(--gray-100);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    display: flex;
+    justify-content: center;
+}
+
+.poster-content {
+    width: 500px;
+    background: var(--primary-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    color: var(--white);
+}
+
+.poster-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.poster-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--white);
+    overflow: hidden;
+}
+
+.poster-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.poster-info h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.poster-summary {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.poster-radar {
+    height: 250px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+}
+
+.poster-keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.poster-keywords .keyword-tag {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--white);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+.poster-footer {
+    text-align: center;
+    font-size: 0.8rem;
+    opacity: 0.7;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+    .export-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .poster-content {
+        width: 100%;
+        max-width: 400px;
+    }
+}

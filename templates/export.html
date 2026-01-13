@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}导出数据 - {{ contact.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/export.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="export-container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('contacts_page') }}">联系人</a>
+        <span class="separator">/</span>
+        <a href="{{ url_for('profile_page', contact_id=contact.id) }}">{{ contact.name }}</a>
+        <span class="separator">/</span>
+        <span>导出数据</span>
+    </div>
+    
+    <h1>导出数据</h1>
+    <p class="subtitle">将 {{ contact.name }} 的聊天记录和分析结果导出为不同格式</p>
+    
+    <div class="export-options">
+        <div class="export-card" data-export="chat-logs">
+            <div class="export-status" id="chatLogsStatus"></div>
+            <div class="export-icon">💬</div>
+            <h3>聊天记录</h3>
+            <p>导出原始聊天记录，包含日期、发送者和内容</p>
+            <div class="export-formats">
+                <label class="format-option">
+                    <input type="checkbox" name="chatFormat" value="xlsx" checked>
+                    <span>Excel</span>
+                </label>
+                <label class="format-option">
+                    <input type="checkbox" name="chatFormat" value="csv">
+                    <span>CSV</span>
+                </label>
+            </div>
+            <div class="export-options-detail">
+                <label class="checkbox-option">
+                    <input type="checkbox" id="includeAnalysis" checked>
+                    <span>包含AI分析</span>
+                </label>
+                <label class="checkbox-option">
+                    <input type="checkbox" id="dateRange" onchange="toggleDateRange()">
+                    <span>日期范围</span>
+                </label>
+                <div class="date-range-inputs" id="dateRangeInputs" style="display: none;">
+                    <input type="date" id="startDate" placeholder="开始日期">
+                    <span>至</span>
+                    <input type="date" id="endDate" placeholder="结束日期">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="exportChatLogs()" id="chatLogsBtn">
+                导出聊天记录
+            </button>
+            <div class="export-progress" id="chatLogsProgress" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="chatLogsProgressFill"></div>
+                </div>
+                <span class="progress-text" id="chatLogsProgressText">准备中...</span>
+            </div>
+        </div>
+        
+        <div class="export-card" data-export="analysis">
+            <div class="export-status" id="analysisStatus"></div>
+            <div class="export-icon">📊</div>
+            <h3>分析报告</h3>
+            <p>导出AI分析的性格特质、兴趣标签和相处指南</p>
+            <div class="export-formats">
+                <label class="format-option">
+                    <input type="checkbox" name="analysisFormat" value="xlsx" checked>
+                    <span>Excel</span>
+                </label>
+                <label class="format-option">
+                    <input type="checkbox" name="analysisFormat" value="json">
+                    <span>JSON</span>
+                </label>
+                <label class="format-option">
+                    <input type="checkbox" name="analysisFormat" value="pdf">
+                    <span>PDF</span>
+                </label>
+            </div>
+            <div class="export-options-detail">
+                <label class="checkbox-option">
+                    <input type="checkbox" id="includePersonality" checked>
+                    <span>性格分析</span>
+                </label>
+                <label class="checkbox-option">
+                    <input type="checkbox" id="includeInterests" checked>
+                    <span>兴趣标签</span>
+                </label>
+                <label class="checkbox-option">
+                    <input type="checkbox" id="includeGuide" checked>
+                    <span>相处指南</span>
+                </label>
+            </div>
+            <button class="btn btn-primary" onclick="exportAnalysis()" id="analysisBtn">
+                导出分析报告
+            </button>
+            <div class="export-progress" id="analysisProgress" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="analysisProgressFill"></div>
+                </div>
+                <span class="progress-text" id="analysisProgressText">准备中...</span>
+            </div>
+        </div>
+        
+        <div class="export-card" data-export="poster">
+            <div class="export-status" id="posterStatus"></div>
+            <div class="export-icon">🖼️</div>
+            <h3>可视化海报</h3>
+            <p>生成包含雷达图、总结文字的精美图片海报</p>
+            <div class="export-formats">
+                <label class="format-option">
+                    <input type="radio" name="posterFormat" value="png" checked>
+                    <span>PNG</span>
+                </label>
+                <label class="format-option">
+                    <input type="radio" name="posterFormat" value="jpg">
+                    <span>JPG</span>
+                </label>
+            </div>
+            <div class="export-options-detail">
+                <label class="checkbox-option">
+                    <input type="checkbox" id="posterRadar" checked>
+                    <span>雷达图</span>
+                </label>
+                <label class="checkbox-option">
+                    <input type="checkbox" id="posterKeywords" checked>
+                    <span>关键词标签</span>
+                </label>
+                <label class="checkbox-option">
+                    <input type="checkbox" id="posterQR" onchange="toggleQRInput()">
+                    <span>包含二维码</span>
+                </label>
+                <div class="qr-input" id="qrInput" style="display: none;">
+                    <input type="text" id="qrContent" placeholder="二维码内容（可选）">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="generatePoster()" id="posterBtn">
+                生成海报
+            </button>
+            <div class="export-progress" id="posterProgress" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="posterProgressFill"></div>
+                </div>
+                <span class="progress-text" id="posterProgressText">准备中...</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="export-history">
+        <h2>导出历史</h2>
+        <p class="hint">导出的文件将保存在 downloads 目录或浏览器默认下载位置</p>
+    </div>
+</div>
+
+<div class="modal" id="posterModal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h2>可视化海报</h2>
+            <button class="modal-close" onclick="closeModal('posterModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="posterPreview" class="poster-preview">
+                <div class="poster-content" id="posterContent">
+                    <div class="poster-header">
+                        <div class="poster-avatar">
+                            {% if contact.avatar %}
+                            <img src="{{ contact.avatar }}" alt="{{ contact.name }}">
+                            {% else %}
+                            <div class="avatar-placeholder">{{ contact.name[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="poster-info">
+                            <h2>{{ contact.name }}</h2>
+                            <p class="poster-summary" id="posterSummary"></p>
+                        </div>
+                    </div>
+                    <div class="poster-radar" id="posterRadar"></div>
+                    <div class="poster-keywords" id="posterKeywords"></div>
+                    <div class="poster-footer">
+                        <p>MySoulLinker - 我的深度社交系统</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeModal('posterModal')">关闭</button>
+            <button class="btn btn-primary" onclick="downloadPoster()">下载海报</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://testingcf.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="{{ url_for('static', filename='js/export.js') }}"></script>
+{% endblock %}

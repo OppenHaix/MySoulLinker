@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}联系人列表 - 我的深度社交系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>联系人</h1>
+    <p class="subtitle">管理你的社交关系，发现深层连接</p>
+</div>
+
+<div class="toolbar">
+    <button class="btn btn-primary" onclick="showNewContactModal()">
+        <span class="icon">+</span> 新建
+    </button>
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="搜索联系人..." oninput="filterContacts()">
+    </div>
+</div>
+
+<div class="contacts-list" id="contactsGrid">
+    {% for contact in contacts %}
+    <div class="contact-row" data-id="{{ contact.id }}" data-name="{{ contact.name }}" onclick="handleCardClick(event, {{ contact.id }})">
+        <div class="contact-avatar">
+            <img src="https://ui-avatars.com/api/?name={{ contact.name[:1] }}&background=fff&color=4a6cf7&size=48" alt="{{ contact.name }}">
+            {% if contact.analysis %}
+            <span class="contact-ai-badge">AI</span>
+            {% endif %}
+        </div>
+        
+        <div class="contact-info">
+            <div class="contact-main">
+                <h3 class="contact-name">{{ contact.name }}</h3>
+                {% if contact.tags %}
+                <div class="contact-tags">
+                    {% for tag in contact.tags.split(',')[:2] %}
+                    <span class="tag-chip">{{ tag.strip() }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if contact.analysis %}
+            <div class="contact-summary">
+                {{ contact.analysis.summary[:60] }}...
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="contact-stats">
+            <div class="stat">
+                <span class="stat-num">{{ contact.chat_count }}</span>
+                <span class="stat-text">消息</span>
+            </div>
+            <div class="stat">
+                <span class="stat-num">{{ contact.active_days|default(0) }}</span>
+                <span class="stat-text">活跃天</span>
+            </div>
+        </div>
+        
+        <div class="contact-activity">
+            {% set activity_level = contact.activity_level|default('low') %}
+            <div class="activity-indicator">
+                <div class="activity-bar">
+                    <div class="activity-fill {{ activity_level }}" style="width: {{ contact.activity_percent|default(20) }}%"></div>
+                </div>
+                <span class="activity-label">{{ activity_level_text(contact.activity_level) }}</span>
+            </div>
+        </div>
+        
+        <div class="contact-actions" onclick="event.stopPropagation()">
+            <a href="{{ url_for('labeling_page', contact_id=contact.id) }}" class="btn btn-small" title="导入聊天">导入</a>
+            <a href="{{ url_for('profile_page', contact_id=contact.id) }}" class="btn btn-small btn-primary" title="查看详情">分析</a>
+            <button class="btn btn-small btn-danger" onclick="deleteContact({{ contact.id }}, '{{ contact.name }}')" title="删除">删除</button>
+        </div>
+        
+        <div class="contact-time">
+            {{ contact.last_active|default('暂无') }}
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">👥</div>
+        <h3>还没有联系人</h3>
+        <p>点击下方按钮新建联系人，开始记录你的社交关系</p>
+        <button class="btn btn-primary btn-large" onclick="showNewContactModal()">
+            <span class="icon">+</span> 新建联系人
+        </button>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function activity_level_text(level) {
+    const texts = {high: '高活跃', medium: '中活跃', low: '低活跃'};
+    return texts[level] || texts.low;
+}
+
+function handleCardClick(event, contactId) {
+    if (!event.target.closest('.btn') && !event.target.closest('button')) {
+        window.location.href = `/profile/${contactId}`;
+    }
+}
+</script>
+
+<div class="modal" id="contactModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">新建联系人</h2>
+            <button class="modal-close" onclick="closeModal('contactModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="contactForm">
+                <input type="hidden" id="contactId">
+                <div class="form-group">
+                    <label for="contactName">姓名/昵称</label>
+                    <input type="text" id="contactName" required placeholder="输入联系人姓名">
+                </div>
+                <div class="form-group">
+                    <label for="contactAvatar">头像URL（可选）</label>
+                    <input type="url" id="contactAvatar" placeholder="输入头像图片链接">
+                </div>
+                <div class="form-group">
+                    <label for="contactTags">标签（用逗号分隔）</label>
+                    <input type="text" id="contactTags" placeholder="朋友,同事,家人...">
+                </div>
+                <div class="form-group">
+                    <label for="contactNotes">备注</label>
+                    <textarea id="contactNotes" rows="3" placeholder="添加备注信息..."></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeModal('contactModal')">取消</button>
+            <button class="btn btn-primary" onclick="saveContact()">保存</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const contacts = {{ contacts|tojson }};
+
+function showNewContactModal() {
+    document.getElementById('modalTitle').textContent = '新建联系人';
+    document.getElementById('contactId').value = '';
+    document.getElementById('contactForm').reset();
+    document.getElementById('contactModal').classList.add('show');
+}
+
+function filterContacts() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('.contact-row').forEach(row => {
+        const name = row.dataset.name.toLowerCase();
+        row.style.display = name.includes(query) ? '' : 'none';
+    });
+}
+
+async function saveContact() {
+    const data = {
+        name: document.getElementById('contactName').value,
+        avatar: document.getElementById('contactAvatar').value,
+        tags: document.getElementById('contactTags').value,
+        notes: document.getElementById('contactNotes').value
+    };
+    
+    if (!data.name) {
+        alert('请输入联系人姓名');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/contacts', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            closeModal('contactModal');
+            location.reload();
+        } else {
+            alert('保存失败');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('保存失败');
+    }
+}
+
+async function deleteContact(id, name) {
+    if (!confirm(`确定要删除联系人"${name}"吗？所有相关聊天记录和分析结果都将被删除。`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('删除失败');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('删除失败');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,451 @@
+{% extends "base.html" %}
+
+{% block title %}主页 - MySoulLinker{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <div class="welcome-section">
+            <h1>{% if username %}欢迎回来，{{ username }}{% else %}{{ greeting }}{% endif %}</h1>
+            <p class="subtitle">这里是您的社交关系管理中心</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="showNewContactModal()">
+                <span class="btn-icon">➕</span> 新建联系人
+            </button>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-content">
+                <span class="stat-number">{{ stats.total_contacts }}</span>
+                <span class="stat-label">联系人</span>
+            </div>
+            <div class="stat-trend up">
+                <span class="trend-icon">↑</span>
+                <span>{{ stats.new_this_month }} 新增</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">💬</div>
+            <div class="stat-content">
+                <span class="stat-number">{{ stats.total_messages }}</span>
+                <span class="stat-label">消息记录</span>
+            </div>
+            <div class="stat-trend">
+                <span>共 {{ stats.total_contacts }} 位联系人</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">🤖</div>
+            <div class="stat-content">
+                <span class="stat-number">{{ stats.total_analyses }}</span>
+                <span class="stat-label">AI分析</span>
+            </div>
+            <div class="stat-trend">
+                <span>{{ stats.analysis_rate }}% 分析率</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">🔥</div>
+            <div class="stat-content">
+                <span class="stat-number">{{ stats.active_relationships }}</span>
+                <span class="stat-label">活跃关系</span>
+            </div>
+            <div class="stat-trend">
+                <span>近30天有互动</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="card quick-actions">
+            <div class="card-header">
+                <h2>⚡ 快捷操作</h2>
+            </div>
+            <div class="action-grid">
+                <div class="action-item" onclick="showNewContactModal()">
+                    <div class="action-icon">👤</div>
+                    <span class="action-label">添加联系人</span>
+                </div>
+                <div class="action-item" onclick="selectContactForAction('import')">
+                    <div class="action-icon">📥</div>
+                    <span class="action-label">导入聊天记录</span>
+                </div>
+                <div class="action-item" onclick="selectContactForAction('analysis')">
+                    <div class="action-icon">🧠</div>
+                    <span class="action-label">AI分析</span>
+                </div>
+                <div class="action-item" onclick="selectContactForAction('export')">
+                    <div class="action-icon">📤</div>
+                    <span class="action-label">导出数据</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card recent-contacts">
+            <div class="card-header">
+                <h2>📅 最近联系人</h2>
+                <a href="{{ url_for('contacts_page') }}" class="view-all">查看全部 →</a>
+            </div>
+            <div class="contacts-list">
+                {% for contact in recent_contacts %}
+                <div class="contact-item" onclick="viewContact({{ contact.id }})">
+                    <div class="contact-avatar">
+                        <img src="https://ui-avatars.com/api/?name={{ contact.name[:1] }}&background=fff&color=4a6cf7&size=40" alt="{{ contact.name }}">
+                    </div>
+                    <div class="contact-info">
+                        <span class="contact-name">{{ contact.name }}</span>
+                        <span class="contact-meta">
+                            {% if contact.chat_count %}{{ contact.chat_count }} 条消息{% endif %}
+                        </span>
+                    </div>
+                    <div class="contact-status">
+                        {% if contact.has_analysis %}
+                        <span class="status-badge analyzed">已分析</span>
+                        {% else %}
+                        <span class="status-badge pending">待分析</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>还没有联系人，开始添加吧！</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card need-attention">
+            <div class="card-header">
+                <h2>⚠️ 需要关注</h2>
+            </div>
+            <div class="attention-list">
+                {% for contact in need_attention %}
+                <div class="attention-item" onclick="viewContact({{ contact.id }})">
+                    <div class="attention-icon">🔔</div>
+                    <div class="attention-content">
+                        <span class="attention-title">{{ contact.name }}</span>
+                        <span class="attention-desc">{{ contact.reason }}</span>
+                    </div>
+                    <span class="attention-action">查看 →</span>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>所有关系都处理得很好！🎉</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card relationship-insights">
+            <div class="card-header">
+                <h2>🌟 关系洞察</h2>
+            </div>
+            <div class="insights-content">
+                {% if insights %}
+                <div class="insight-card">
+                    <span class="insight-label">平均消息数</span>
+                    <span class="insight-value">{{ insights.avg_messages_per_contact }}</span>
+                </div>
+                <div class="insight-card">
+                    <span class="insight-label">最活跃联系人</span>
+                    <span class="insight-value">{{ insights.most_active_contact }}</span>
+                </div>
+                <div class="insight-card">
+                    <span class="insight-label">分析覆盖率</span>
+                    <span class="insight-value">{{ insights.analysis_coverage }}%</span>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>添加更多联系人来获取洞察</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card activity-chart">
+            <div class="card-header">
+                <h2>📊 互动活跃度</h2>
+                <select id="activityRange" onchange="updateActivityChart()">
+                    <option value="7">近7天</option>
+                    <option value="30" selected>近30天</option>
+                    <option value="90">近90天</option>
+                </select>
+            </div>
+            <div class="chart-container" id="activityChart">
+                <canvas id="activityCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="contactModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">新建联系人</h2>
+            <button class="modal-close" onclick="closeModal('contactModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="contactForm">
+                <input type="hidden" id="contactId">
+                <div class="form-group">
+                    <label for="contactName">姓名/昵称</label>
+                    <input type="text" id="contactName" required placeholder="输入联系人姓名">
+                </div>
+                <div class="form-group">
+                    <label for="contactAvatar">头像URL（可选）</label>
+                    <input type="url" id="contactAvatar" placeholder="输入头像图片链接">
+                </div>
+                <div class="form-group">
+                    <label for="contactTags">标签（用逗号分隔）</label>
+                    <input type="text" id="contactTags" placeholder="朋友,同事,家人...">
+                </div>
+                <div class="form-group">
+                    <label for="contactNotes">备注</label>
+                    <textarea id="contactNotes" rows="3" placeholder="添加备注信息..."></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeModal('contactModal')">取消</button>
+            <button class="btn btn-primary" onclick="saveContact()">保存</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="contactSelectorModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="selectorModalTitle">选择联系人</h2>
+            <button class="modal-close" onclick="closeModal('contactSelectorModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="selector-search">
+                <input type="text" id="contactSearch" placeholder="搜索联系人..." oninput="filterContacts()">
+            </div>
+            <div class="selector-list" id="contactSelectorList">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const recentContacts = {{ recent_contacts|tojson }};
+const activityData = {{ activity_data|tojson }};
+
+function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 6) return "夜猫子";
+    if (hour < 12) return "早上好";
+    if (hour < 14) return "中午好";
+    if (hour < 18) return "下午好";
+    return "晚上好";
+}
+
+function showNewContactModal() {
+    document.getElementById('modalTitle').textContent = '新建联系人';
+    document.getElementById('contactId').value = '';
+    document.getElementById('contactForm').reset();
+    document.getElementById('contactModal').classList.add('show');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('show');
+}
+
+function viewContact(contactId) {
+    window.location.href = `/profile/${contactId}`;
+}
+
+let allContacts = [];
+let pendingAction = null;
+
+async function selectContactForAction(action) {
+    pendingAction = action;
+    const titles = {
+        'import': '选择联系人导入聊天记录',
+        'analysis': '选择联系人进行AI分析',
+        'export': '选择联系人导出数据'
+    };
+    document.getElementById('selectorModalTitle').textContent = titles[action];
+    document.getElementById('contactSelectorModal').classList.add('show');
+    document.getElementById('contactSearch').value = '';
+    
+    await loadContactsForSelector();
+}
+
+async function loadContactsForSelector() {
+    const listEl = document.getElementById('contactSelectorList');
+    listEl.innerHTML = '<div class="loading">加载中...</div>';
+    
+    try {
+        const response = await fetch('/api/contacts');
+        const data = await response.json();
+        allContacts = data.contacts || [];
+        renderContactSelectorList(allContacts);
+    } catch (error) {
+        console.error('Error loading contacts:', error);
+        listEl.innerHTML = '<div class="empty-state">加载失败，请重试</div>';
+    }
+}
+
+function renderContactSelectorList(contacts) {
+    const listEl = document.getElementById('contactSelectorList');
+    
+    if (contacts.length === 0) {
+        listEl.innerHTML = '<div class="empty-state">没有找到联系人</div>';
+        return;
+    }
+    
+    listEl.innerHTML = contacts.map(contact => `
+        <div class="selector-item" onclick="executeAction(${contact.id})">
+            <div class="selector-avatar">
+                <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(contact.name[0])}&background=fff&color=4a6cf7&size=40" alt="${contact.name}">
+            </div>
+            <div class="selector-info">
+                <span class="selector-name">${contact.name}</span>
+                <span class="selector-meta">${contact.chat_count || 0} 条消息</span>
+            </div>
+            ${contact.has_analysis ? '<span class="selector-badge analyzed">已分析</span>' : '<span class="selector-badge pending">待分析</span>'}
+        </div>
+    `).join('');
+}
+
+function filterContacts() {
+    const searchTerm = document.getElementById('contactSearch').value.toLowerCase();
+    const filtered = allContacts.filter(contact => 
+        contact.name.toLowerCase().includes(searchTerm)
+    );
+    renderContactSelectorList(filtered);
+}
+
+function executeAction(contactId) {
+    closeModal('contactSelectorModal');
+    
+    const actionUrls = {
+        'import': `/labeling/${contactId}`,
+        'analysis': `/profile/${contactId}`,
+        'export': `/export/${contactId}`
+    };
+    
+    window.location.href = actionUrls[pendingAction];
+}
+
+async function saveContact() {
+    const data = {
+        name: document.getElementById('contactName').value,
+        avatar: document.getElementById('contactAvatar').value,
+        tags: document.getElementById('contactTags').value,
+        notes: document.getElementById('contactNotes').value
+    };
+    
+    if (!data.name) {
+        alert('请输入联系人姓名');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/contacts', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            closeModal('contactModal');
+            window.location.href = `/labeling/${result.contact.id}`;
+        } else {
+            alert('保存失败');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('保存失败');
+    }
+}
+
+let activityChart = null;
+
+function updateActivityChart() {
+    const range = document.getElementById('activityRange').value;
+    const ctx = document.getElementById('activityCanvas').getContext('2d');
+    
+    const labels = [];
+    const data = [];
+    
+    for (let i = parseInt(range) - 1; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
+        labels.push(dateStr);
+        
+        const found = activityData.find(d => d.date === date.toISOString().split('T')[0]);
+        data.push(found ? found.count : 0);
+    }
+    
+    if (activityChart) {
+        activityChart.destroy();
+    }
+    
+    activityChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '消息数',
+                data: data,
+                borderColor: '#4a6cf7',
+                backgroundColor: 'rgba(74, 108, 247, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 2,
+                pointHoverRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 7
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateActivityChart();
+});
+</script>
+{% endblock %}

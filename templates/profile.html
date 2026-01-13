@@ -1,0 +1,534 @@
+{% extends "base.html" %}
+
+{% block title %}{{ contact.name }}的分析结果{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="breadcrumb">
+            <a href="{{ url_for('contacts_page') }}">联系人</a>
+            <span class="separator">/</span>
+            <span>{{ contact.name }}</span>
+        </div>
+        <div class="header-content">
+            <div class="avatar-section">
+                <img src="{{ contact.avatar if contact.avatar and contact.avatar != 'https://ui-avatars.com/api/?name=?&background=random&color=fff&size=128' else 'https://ui-avatars.com/api/?name=' + contact.name[:1] + '&background=fff&color=4a6cf7&size=128' }}" alt="{{ contact.name }}" class="profile-avatar">
+            </div>
+            <div class="info-section">
+                <h1>{{ contact.name }}</h1>
+                {% if contact.tags %}
+                <div class="tags">
+                    {% for tag in contact.tags.split(',') %}
+                    <span class="tag">{{ tag.strip() }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="contact-stats-row">
+                    <div class="contact-stat">
+                        <span class="stat-number">{{ chat_logs|length }}</span>
+                        <span class="stat-desc">消息</span>
+                    </div>
+                    <div class="contact-stat">
+                        <span class="stat-number">{{ contact.sessions|default(0) }}</span>
+                        <span class="stat-desc">会话</span>
+                    </div>
+                    <div class="contact-stat">
+                        <span class="stat-number">{{ contact.active_days|default(0) }}</span>
+                        <span class="stat-desc">活跃天</span>
+                    </div>
+                    <div class="contact-stat">
+                        <span class="stat-number">{{ contact.analysis_count|default(0) }}</span>
+                        <span class="stat-desc">分析次数</span>
+                    </div>
+                </div>
+                {% if contact.notes %}
+                <p class="notes">{{ contact.notes }}</p>
+                {% endif %}
+            </div>
+            <div class="actions-section">
+                <a href="{{ url_for('labeling_page', contact_id=contact.id) }}" class="btn">
+                    <span class="btn-icon">📥</span> 导入新对话
+                </a>
+                <a href="{{ url_for('export_page', contact_id=contact.id) }}" class="btn btn-primary">
+                    <span class="btn-icon">📤</span> 导出数据
+                </a>
+            </div>
+        </div>
+        
+        {% if contact.last_active %}
+        <div class="header-footer">
+            <span class="last-active-date">
+                <span class="icon">🕐</span> 最近活跃: {{ contact.last_active }}
+            </span>
+            {% if contact.relationship_trend %}
+            <span class="relationship-trend {{ contact.relationship_trend }}">
+                {% if contact.relationship_trend == 'up' %}📈 关系升温{% elif contact.relationship_trend == 'down' %}📉 关系降温{% else %}➡️ 关系稳定{% endif %}
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="profile-tabs">
+        <button class="tab-btn active" data-tab="overview">
+            <span class="tab-icon">📊</span> 概览
+        </button>
+        <button class="tab-btn" data-tab="traits">
+            <span class="tab-icon">🧠</span> 性格特质
+        </button>
+        <button class="tab-btn" data-tab="interests">
+            <span class="tab-icon">🎯</span> 兴趣分析
+        </button>
+        <button class="tab-btn" data-tab="guide">
+            <span class="tab-icon">💡</span> 相处指南
+        </button>
+        <button class="tab-btn" data-tab="chats">
+            <span class="tab-icon">💬</span> 原始对话
+        </button>
+        <button class="tab-btn" data-tab="timeline">
+            <span class="tab-icon">📅</span> 互动时间线
+        </button>
+    </div>
+
+    <div class="tab-content">
+        <div class="tab-panel active" id="overview">
+            {% if analysis %}
+            <div class="overview-grid">
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <span class="summary-icon">✨</span>
+                        <h3>AI 总结</h3>
+                    </div>
+                    <p class="summary-text">{{ analysis.summary }}</p>
+                    <div class="summary-meta">
+                        <span class="meta-item">
+                            <span class="label">分析时间</span>
+                            <span class="value">{{ analysis.created_at|default('未知') }}</span>
+                        </span>
+                        <span class="meta-item">
+                            <span class="label">基于</span>
+                            <span class="value">{{ analysis.message_count|default(0) }} 条消息</span>
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="radar-container">
+                    <div class="chart-header">
+                        <h3>性格雷达图</h3>
+                        <div class="chart-legend">
+                            <span class="legend-item"><span class="legend-dot"></span> 对方</span>
+                            <span class="legend-item"><span class="legend-dot me"></span> 我</span>
+                        </div>
+                    </div>
+                    <div id="radarChart" class="chart-container"></div>
+                </div>
+                
+                <div class="keywords-container">
+                    <div class="chart-header">
+                        <h3>兴趣关键词</h3>
+                        <span class="keyword-count" id="keywordCount">0 个标签</span>
+                    </div>
+                    <div id="wordCloud" class="wordcloud-container"></div>
+                </div>
+                
+                <div class="stats-card">
+                    <h3>消息分布</h3>
+                    <div id="messageChart" class="mini-chart"></div>
+                    <div class="distribution-stats">
+                        <div class="dist-item">
+                            <span class="dist-label">对方</span>
+                            <span class="dist-value" id="otherPercent">0%</span>
+                            <span class="dist-count" id="otherCount">0 条</span>
+                        </div>
+                        <div class="dist-item">
+                            <span class="dist-label">我</span>
+                            <span class="dist-value" id="mePercent">0%</span>
+                            <span class="dist-count" id="meCount">0 条</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="quick-insights">
+                    <h3>快速洞察</h3>
+                    <div class="insights-list" id="quickInsights">
+                        <div class="insight-item">
+                            <span class="insight-icon">⏰</span>
+                            <span class="insight-text">加载中...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-analysis">
+                <div class="empty-icon">🔍</div>
+                <h3>还没有分析结果</h3>
+                <p>点击下方按钮，让AI分析这段关系</p>
+                <button class="btn btn-primary btn-large" onclick="startAnalysis()">
+                    <span class="btn-icon">🤖</span> 开始AI分析
+                </button>
+                <p class="analysis-info">
+                    基于 {{ chat_logs|length }} 条聊天记录，将生成性格分析、兴趣标签和相处建议
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="tab-panel" id="traits">
+            {% if analysis %}
+            <div class="traits-detail">
+                <div class="trait-category">
+                    <div class="category-header">
+                        <span class="category-icon">🎯</span>
+                        <h3>核心特质</h3>
+                    </div>
+                    <div class="trait-list" id="coreTraitsList"></div>
+                </div>
+                <div class="trait-category">
+                    <div class="category-header">
+                        <span class="category-icon">🏃‍♂️</span>
+                        <h3>行为偏好</h3>
+                    </div>
+                    <div class="trait-list" id="behaviorList"></div>
+                </div>
+                <div class="trait-category">
+                    <div class="category-header">
+                        <span class="category-icon">👥</span>
+                        <h3>社交互动</h3>
+                    </div>
+                    <div class="trait-list" id="socialList"></div>
+                </div>
+                <div class="trait-category">
+                    <div class="category-header">
+                        <span class="category-icon">🧠</span>
+                        <h3>认知思维</h3>
+                    </div>
+                    <div class="trait-list" id="cognitiveList"></div>
+                </div>
+            </div>
+            {% else %}
+            <div class="no-data-state">
+                <span class="no-data-icon">🔒</span>
+                <p>请先进行AI分析以查看详细特质</p>
+                <button class="btn btn-primary" onclick="startAnalysis()">开始分析</button>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="tab-panel" id="interests">
+            {% if analysis %}
+            <div class="interests-detail">
+                <div class="interest-card">
+                    <div class="card-icon">🔥</div>
+                    <h3>高频话题</h3>
+                    <p class="card-desc">聊天中出现频率最高的话题</p>
+                    <div class="interest-tags" id="highFrequencyTopics"></div>
+                </div>
+                <div class="interest-card">
+                    <div class="card-icon">💡</div>
+                    <h3>兴趣领域</h3>
+                    <p class="card-desc">对方感兴趣的话题方向</p>
+                    <div class="interest-tags" id="interestsList"></div>
+                </div>
+                <div class="interest-card">
+                    <div class="card-icon">🎨</div>
+                    <h3>生活方式</h3>
+                    <p class="card-desc">从聊天中推断的生活习惯</p>
+                    <div class="lifestyle-content" id="lifestyleContent"></div>
+                </div>
+                <div class="interest-card">
+                    <div class="card-icon">📝</div>
+                    <h3>表达特点</h3>
+                    <p class="card-desc">聊天风格和用词习惯</p>
+                    <div class="expression-content" id="expressionContent"></div>
+                </div>
+            </div>
+            {% else %}
+            <div class="no-data-state">
+                <span class="no-data-icon">🔒</span>
+                <p>请先进行AI分析以查看兴趣分析</p>
+                <button class="btn btn-primary" onclick="startAnalysis()">开始分析</button>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="tab-panel" id="guide">
+            {% if analysis %}
+            <div class="guide-detail">
+                <div class="guide-section dos">
+                    <div class="section-header">
+                        <span class="section-icon">✅</span>
+                        <h3>应该做的事</h3>
+                    </div>
+                    <p class="section-desc">根据分析结果，这些行为会让对方感到舒适</p>
+                    <ul id="dosList"></ul>
+                </div>
+                <div class="guide-section donts">
+                    <div class="section-header">
+                        <span class="section-icon">❌</span>
+                        <h3>不应该做的事</h3>
+                    </div>
+                    <p class="section-desc">这些行为可能会让对方感到不适</p>
+                    <ul id="dontsList"></ul>
+                </div>
+                <div class="guide-section tips">
+                    <div class="section-header">
+                        <span class="section-icon">💬</span>
+                        <h3>话题推荐</h3>
+                    </div>
+                    <p class="section-desc">可以尝试聊这些话题</p>
+                    <ul id="topicSuggestions"></ul>
+                </div>
+                <div class="guide-section gifts">
+                    <div class="section-header">
+                        <span class="section-icon">🎁</span>
+                        <h3>礼物/关心建议</h3>
+                    </div>
+                    <p class="section-desc">根据对方兴趣给出的建议</p>
+                    <ul id="giftSuggestions"></ul>
+                </div>
+            </div>
+            {% else %}
+            <div class="no-data-state">
+                <span class="no-data-icon">🔒</span>
+                <p>请先进行AI分析以查看相处指南</p>
+                <button class="btn btn-primary" onclick="startAnalysis()">开始分析</button>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="tab-panel" id="chats">
+            <div class="chats-toolbar">
+                <div class="toolbar-left">
+                    <label class="select-all-label">
+                        <input type="checkbox" id="selectAllChats" onchange="toggleSelectAllChats()">
+                        <span>全选</span>
+                    </label>
+                    <div class="selected-info">
+                        <span id="selectedCount">已选择 0 条</span>
+                    </div>
+                </div>
+                <div class="toolbar-actions">
+                    <button class="btn btn-primary btn-small" id="analyzeSelectedBtn" onclick="analyzeSelectedMessages()" disabled>
+                        <span class="btn-icon">🤖</span> 分析选中
+                    </button>
+                    <button class="btn btn-small" onclick="toggleChatViewMode()">
+                        <span class="btn-icon" id="viewModeIcon">📋</span>
+                        <span id="viewModeText">紧凑视图</span>
+                    </button>
+                </div>
+                <div class="toolbar-filters">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="chatSearch" placeholder="搜索对话内容..." oninput="filterChats()">
+                    </div>
+                    <select id="chatDateFilter" class="date-filter" onchange="filterChats()">
+                        <option value="all">所有日期</option>
+                    </select>
+                </div>
+            </div>
+            <div class="chats-wrapper">
+                <div class="chats-container" id="chatsContainer">
+                    {% set ns = namespace(last_date='') %}
+                    {% for log in chat_logs %}
+                    {% if log.chat_date.strftime('%Y-%m-%d') != ns.last_date %}
+                    <div class="chat-date-group" data-date="{{ log.chat_date.strftime('%Y-%m-%d') }}">
+                        <div class="date-divider">
+                            <span class="date-badge">{{ log.chat_date.strftime('%m月%d日') }}</span>
+                            <span class="date-weekday">{{ ['周一','周二','周三','周四','周五','周六','周日'][log.chat_date.weekday()] }}</span>
+                        </div>
+                        {% set ns.last_date = log.chat_date.strftime('%Y-%m-%d') %}
+                        {% endif %}
+                        <div class="chat-item {{ 'me' if log.speaker == '我' else 'other' }}" data-date="{{ log.chat_date.strftime('%Y-%m-%d') }}" data-time="{{ log.chat_date.strftime('%H:%M') }}" data-id="{{ log.id }}">
+                            <label class="chat-checkbox">
+                                <input type="checkbox" class="chat-select-checkbox" value="{{ log.id }}" onchange="updateSelectedCount()">
+                            </label>
+                            <div class="chat-bubble">
+                                <div class="bubble-header">
+                                    <span class="speaker-avatar {{ 'me' if log.speaker == '我' else 'other' }}">{{ log.speaker[:1] }}</span>
+                                    <span class="speaker-name">{{ log.speaker }}</span>
+                                    <span class="chat-time">{{ log.chat_date.strftime('%H:%M') }}</span>
+                                </div>
+                                <p class="chat-content">{{ log.content }}</p>
+                            </div>
+                        </div>
+                        {% if loop.last or chat_logs[loop.index].chat_date.strftime('%Y-%m-%d') != log.chat_date.strftime('%Y-%m-%d') %}
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="no-data-state">
+                        <span class="no-data-icon">💬</span>
+                        <p>还没有聊天记录</p>
+                        <a href="{{ url_for('labeling_page', contact_id=contact.id) }}" class="btn btn-primary">导入聊天</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-panel" id="timeline">
+            <div class="timeline-layout">
+                <div class="timeline-main">
+                    <div class="timeline-header">
+                        <div class="header-left">
+                            <h3>互动时间线</h3>
+                            <p class="header-desc">查看近6个月的互动活跃度</p>
+                        </div>
+                        <div class="timeline-stats">
+                            <div class="tl-stat">
+                                <div class="stat-icon">📅</div>
+                                <div class="stat-content">
+                                    <span class="tl-stat-value">{{ contact.active_days|default(0) }}</span>
+                                    <span class="tl-stat-label">活跃天数</span>
+                                </div>
+                            </div>
+                            <div class="tl-stat">
+                                <div class="stat-icon">⚡</div>
+                                <div class="stat-content">
+                                    <span class="tl-stat-value">{{ contact.avg_response_time|default('N/A') }}</span>
+                                    <span class="tl-stat-label">平均响应</span>
+                                </div>
+                            </div>
+                            <div class="tl-stat">
+                                <div class="stat-icon">🔥</div>
+                                <div class="stat-content">
+                                    <span class="tl-stat-value">{{ contact.longest_streak|default(0) }}</span>
+                                    <span class="tl-stat-label">最长连续</span>
+                                </div>
+                            </div>
+                            <div class="tl-stat highlight">
+                                <div class="stat-icon">💬</div>
+                                <div class="stat-content">
+                                    <span class="tl-stat-value">{{ chat_logs|length }}</span>
+                                    <span class="tl-stat-label">总消息数</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="timeline-visual" id="timelineVisual">
+                        <div class="heatmap-container">
+                            <div class="heatmap-header">
+                                <span class="heatmap-title">活跃度热力图</span>
+                                <div class="timeline-legend">
+                                    <span class="legend-item"><span class="legend-color" style="background: #e8f5e9"></span> 无</span>
+                                    <span class="legend-item"><span class="legend-color low"></span> 1-3</span>
+                                    <span class="legend-item"><span class="legend-color medium"></span> 4-10</span>
+                                    <span class="legend-item"><span class="legend-color high"></span> 10+</span>
+                                </div>
+                            </div>
+                            <div class="timeline-heatmap" id="timelineHeatmap">
+                                <p class="timeline-placeholder">加载中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timeline-sidebar">
+                    <div class="activity-summary">
+                        <h4>互动概况</h4>
+                        <div class="summary-list" id="activitySummary">
+                            <div class="summary-item">
+                                <span class="item-icon">📈</span>
+                                <span class="item-value" id="peakDay">-</span>
+                                <span class="item-label">最活跃日</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="item-icon">🕐</span>
+                                <span class="item-value" id="peakHour">-</span>
+                                <span class="item-label">活跃时段</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="item-icon">📊</span>
+                                <span class="item-value" id="avgDaily">-</span>
+                                <span class="item-label">日均消息</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="item-icon">📆</span>
+                                <span class="item-value" id="activeWeeks">-</span>
+                                <span class="item-label">活跃周数</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="recent-activity">
+                        <h4>最近互动</h4>
+                        <div class="activity-list" id="recentActivity">
+                            <p class="empty-state">暂无数据</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not analysis %}
+    <div class="analysis-section">
+        <button class="btn btn-primary btn-large" onclick="startAnalysis()">
+            <span class="btn-icon">🤖</span> 开始AI分析
+        </button>
+        <p class="analysis-hint">分析现有 {{ chat_logs|length }} 条聊天记录，生成性格分析报告</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="modal" id="analysisModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>AI分析中...</h2>
+            <button class="modal-close" onclick="cancelAnalysis()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="analysis-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="analysisProgress"></div>
+                </div>
+                <span class="progress-text" id="progressText">0%</span>
+            </div>
+            <div class="token-stats">
+                <div class="token-item">
+                    <span class="token-label">已生成 Tokens</span>
+                    <span class="token-value" id="generatedTokens">0</span>
+                </div>
+                <div class="token-item">
+                    <span class="token-label">总 Tokens</span>
+                    <span class="token-value" id="totalTokens">0</span>
+                </div>
+            </div>
+            <div class="loading-spinner" id="analysisSpinner"></div>
+            <p id="analysisStatus">正在分析聊天记录...</p>
+            <div class="analysis-steps">
+                <div class="step-item active" id="step1">
+                    <span class="step-check">○</span> 收集数据
+                </div>
+                <div class="step-item" id="step2">
+                    <span class="step-check">○</span> 分析特质
+                </div>
+                <div class="step-item" id="step3">
+                    <span class="step-check">○</span> 生成建议
+                </div>
+            </div>
+            <p class="hint" id="analysisHint">AI正在实时生成分析结果，请稍候...</p>
+            
+            <div class="raw-data-section" id="rawDataSection" style="display: none;">
+                <div class="raw-data-header">
+                    <h3>原始分析数据</h3>
+                    <button class="btn btn-sm" onclick="toggleRawData()">收起/展开</button>
+                </div>
+                <pre class="raw-data-content" id="rawDataContent"></pre>
+            </div>
+            
+            <div class="analysis-actions" id="analysisActions" style="display: none;">
+                <button class="btn btn-primary" onclick="finishAnalysis()">完成</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://testingcf.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}导入聊天记录 - {{ contact.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/labeling.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="{{ url_for('contacts_page') }}">联系人</a>
+        <span class="separator">/</span>
+        <span>{{ contact.name }}</span>
+        <span class="separator">/</span>
+        <span>导入聊天记录</span>
+    </div>
+    <h1>导入聊天记录</h1>
+    <p class="subtitle">粘贴微信复制的聊天记录，标注每条消息的发送者</p>
+</div>
+
+<div class="labeling-container">
+    <div class="step-indicator">
+        <div class="step active" data-step="1">
+            <span class="step-num">1</span>
+            <span class="step-text">粘贴聊天记录</span>
+        </div>
+        <span class="step-connector"></span>
+        <div class="step" data-step="2">
+            <span class="step-num">2</span>
+            <span class="step-text">标注发送者</span>
+        </div>
+        <span class="step-connector"></span>
+        <div class="step" data-step="3">
+            <span class="step-num">3</span>
+            <span class="step-text">设置日期</span>
+        </div>
+    </div>
+
+    <div class="content-area">
+        <div class="input-section" id="inputSection">
+            <div class="section-header">
+                <h2>粘贴聊天记录</h2>
+                <p>将从微信复制的纯文本聊天记录粘贴到下方文本框，或拖拽文件到此处</p>
+            </div>
+            <div class="drop-zone" id="dropZone">
+                <textarea id="chatTextarea" placeholder="你好呀
+你好，吃饭了吗？
+我还没，你吃了吗？
+我也没吃
+刚好附近有一家挺不错的餐馆，一块去吃吧"></textarea>
+            </div>
+            <div class="section-actions">
+                <button class="btn btn-secondary" onclick="clearText()">清空</button>
+                <button class="btn btn-primary" onclick="parseChatText()">下一步：标注发送者</button>
+            </div>
+            <div class="help-text">
+                <p>💡 提示：微信4.0复制出的聊天记录不包含发送者信息，需要手动标注。支持拖拽 .txt 文件导入</p>
+            </div>
+        </div>
+
+        <div class="labeling-section" id="labelingSection" style="display: none;">
+            <div class="section-header">
+                <h2>标注发送者</h2>
+                <p>点击每条消息选择发送者，默认为"对方"</p>
+            </div>
+            
+            <div class="batch-actions">
+                <button class="btn btn-small" id="btn-other" onclick="selectAll('对方')">全选对方</button>
+                <button class="btn btn-small" id="btn-me" onclick="selectAll('我')">全选我</button>
+                <button class="btn btn-small" onclick="alternateSelect()">交替选择</button>
+                <button class="btn btn-small" onclick="invertSelect()">反选</button>
+                <button class="btn btn-small btn-secondary" onclick="backToInput()">上一步</button>
+            </div>
+            
+            <div class="labeling-info">
+                <div class="info-item">
+                    <span class="label other">对方</span>
+                    <span id="otherCount">0</span> 条
+                </div>
+                <div class="info-item">
+                    <span class="label me">我</span>
+                    <span id="myCount">0</span> 条
+                </div>
+                <div class="progress-item">
+                    <span class="progress-label">我的消息占比</span>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="labelProgress" style="width: 0%"></div>
+                    </div>
+                    <span class="progress-text" id="progressText">0%</span>
+                </div>
+            </div>
+            
+            <div class="keyboard-hints">
+                <span>⌨️ 快捷键：</span>
+                <span><kbd>↑</kbd><kbd>↓</kbd> 导航</span>
+                <span><kbd>空格</kbd>/<kbd>回车</kbd> 切换</span>
+                <span><kbd>Ctrl</kbd>+<kbd>A</kbd> 全选对方</span>
+                <span><kbd>Ctrl</kbd>+<kbd>M</kbd> 全选我</span>
+                <span><kbd>Ctrl</kbd>+<kbd>I</kbd> 反选</span>
+            </div>
+            
+            <div class="chat-lines" id="chatLines"></div>
+            
+            <div class="section-actions">
+                <button class="btn btn-secondary" onclick="backToInput()">返回修改</button>
+                <button class="btn btn-primary" onclick="goToDateSelection()">下一步：设置日期</button>
+            </div>
+        </div>
+
+        <div class="date-section" id="dateSection" style="display: none;">
+            <div class="section-header">
+                <h2>设置日期</h2>
+                <p>选择这段聊天发生的日期（默认为今天）</p>
+            </div>
+            
+            <div class="date-picker-container">
+                <label for="chatDate">聊天日期</label>
+                <input type="date" id="chatDate">
+            </div>
+            
+            <div class="preview-section">
+                <h3>预览</h3>
+                <div class="preview-stats">
+                    <span>共 <strong id="previewTotal">0</strong> 条消息</span>
+                    <span>对方 <strong id="previewOther">0</strong> 条</span>
+                    <span>我 <strong id="previewMe">0</strong> 条</span>
+                </div>
+            </div>
+            
+            <div class="section-actions">
+                <button class="btn btn-secondary" onclick="backToLabeling()">返回</button>
+                <button class="btn btn-primary" onclick="submitChatLogs()">提交保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/labeling.js') }}"></script>
+{% endblock %}

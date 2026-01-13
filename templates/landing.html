@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySoulLinker - 探索关系的深度</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0f172a;
+            --accent-glow: #818cf8;
+            --accent-secondary: #c084fc;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --glass-bg: rgba(30, 41, 59, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        .ambient-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background: radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.15), transparent 25%),
+                        radial-gradient(circle at 85% 30%, rgba(192, 132, 252, 0.15), transparent 25%);
+            animation: pulseBackground 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseBackground {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+
+        .main-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .soul-card {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            max-width: 1100px;
+            width: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .brand-section {
+            padding: 4rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-right: 1px solid var(--glass-border);
+        }
+
+        .logo-mark {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 5rem;
+            line-height: 1;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .tagline {
+            font-size: 1.25rem;
+            color: var(--accent-glow);
+            margin-bottom: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .description {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            font-size: 1.05rem;
+            margin-bottom: 3rem;
+            max-width: 90%;
+        }
+
+        .description strong {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .feature-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .feature-pill:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .feature-icon {
+            font-size: 1.2rem;
+        }
+
+        .feature-text {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .interaction-section {
+            padding: 4rem;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+        }
+
+        .welcome-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-style: italic;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+        }
+
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .soul-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--text-secondary);
+            padding: 1rem 0.5rem;
+            font-size: 1.2rem;
+            color: #fff;
+            text-align: center;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .soul-input:focus {
+            outline: none;
+            border-bottom-color: var(--accent-glow);
+            box-shadow: 0 10px 20px -10px rgba(129, 140, 248, 0.2);
+        }
+
+        .soul-input::placeholder {
+            color: rgba(148, 163, 184, 0.4);
+            font-weight: 300;
+        }
+
+        .soul-btn {
+            background: linear-gradient(135deg, var(--accent-glow), var(--accent-secondary));
+            color: #fff;
+            border: none;
+            padding: 1rem 3rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(129, 140, 248, 0.3);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .soul-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(129, 140, 248, 0.5);
+        }
+
+        .footer-note {
+            position: absolute;
+            bottom: 2rem;
+            font-size: 0.75rem;
+            color: rgba(148, 163, 184, 0.5);
+            text-align: center;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .soul-card {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+            }
+            .brand-section {
+                padding: 3rem 2rem;
+                border-right: none;
+                border-bottom: 1px solid var(--glass-border);
+                text-align: center;
+            }
+            .features-grid {
+                text-align: left;
+            }
+            .interaction-section {
+                padding: 3rem 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-background"></div>
+
+    <div class="main-wrapper">
+        <div class="soul-card">
+            <div class="brand-section">
+                <h1 class="logo-mark">MySoulLinker</h1>
+                <div class="tagline">Deep Social Intelligence</div>
+                
+                <div class="description">
+                    <p>在信息洪流中，我们常常遗忘那些闪光的细节。</p>
+                    <p><strong>MySoulLinker</strong> 不仅仅是一个工具，它是你的社交记忆宫殿。通过 AI 深度解析聊天记录，我们将碎片化的对话重塑为立体的<strong>人格画像</strong>与<strong>情感图谱</strong>。</p>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-pill">
+                        <span class="feature-icon">🔍</span>
+                        <span class="feature-text">原始数据清洗</span>
+                    </div>
+                    <div class="feature-pill">
+                        <span class="feature-icon">🧬</span>
+                        <span class="feature-text">AI 性格侧写</span>
+                    </div>
+                    <div class="feature-pill">
+                        <span class="feature-icon">🕸️</span>
+                        <span class="feature-text">关系可视化</span>
+                    </div>
+                    <div class="feature-pill">
+                        <span class="feature-icon">🛡️</span>
+                        <span class="feature-text">隐私本地化</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="interaction-section">
+                <div class="form-container">
+                    <div class="welcome-text">Who are you?</div>
+                    <form id="usernameForm" action="/set_username" method="POST">
+                        <div class="input-wrapper">
+                            <input type="text" id="username" name="username" class="soul-input" placeholder="输入你的名字以开启旅程" required autocomplete="off">
+                        </div>
+                        <button type="submit" class="soul-btn">
+                            Enter System
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="footer-note">
+                    Powered by Volcengine Doubao Seed 1.8
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('usernameForm').addEventListener('submit', function(e) {
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                e.preventDefault();
+                const input = document.getElementById('username');
+                input.style.borderBottomColor = '#ef4444';
+                input.placeholder = "名字不能为空...";
+                setTimeout(() => {
+                    input.style.borderBottomColor = '';
+                }, 2000);
+                return false;
+            }
+            localStorage.setItem('mysoullinker_username', username);
+            return true;
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const card = document.querySelector('.soul-card');
+            setTimeout(() => {
+                card.style.transition = 'all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body>
+</html>

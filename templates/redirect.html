@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跳转中...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+        }
+        .redirect-container {
+            text-align: center;
+            padding: 2rem;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #e9ecef;
+            border-top-color: #4a6cf7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .message {
+            color: #495057;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+        .username {
+            color: #4a6cf7;
+            font-weight: 600;
+        }
+        .sub-message {
+            color: #adb5bd;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="redirect-container">
+        <div class="spinner"></div>
+        <p class="message"><span class="username">{{ username }}</span>，正在带你进入系统...</p>
+        <p class="sub-message">请稍候</p>
+    </div>
+    <script>
+        setTimeout(function() {
+            window.location.href = '/home';
+        }, 1500);
+    </script>
+</body>
+</html>
