@@ -1,8 +1,12 @@
 import os
 
-# ⚠️ 请设置自己的火山引擎 API Key
-# 方式：export VOLCANO_ARK_API_KEY="your-api-key"
-VOLCANO_ARK_API_KEY = None  # 必须通过环境变量设置
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+VOLCANO_ARK_API_KEY = None
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 DATABASE_DIR = os.path.join(BASE_DIR, 'database')
