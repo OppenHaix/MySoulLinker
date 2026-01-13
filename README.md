@@ -219,38 +219,43 @@ MySoulLinker_v1.0/
 1. 注册并登录 [火山引擎控制台](https://www.volcengine.com/)
 2. 开通 AI 服务，获取 API Key
 
-**配置方式：**
+**配置步骤：**
 
+1. 复制环境变量模板：
 ```bash
-# Windows (PowerShell)
-$env:VOLCANO_ARK_API_KEY="your-api-key"
-
-# Windows (CMD)
-set VOLCANO_ARK_API_KEY=your-api-key
-
-# macOS/Linux
-export VOLCANO_ARK_API_KEY="your-api-key"
+cp .env.example .env
 ```
 
-**或者在 Python 中设置：**
-```python
-import os
-os.environ["VOLCANO_ARK_API_KEY"] = "your-api-key"
+2. 编辑 `.env` 文件，填入你的 API Key：
+```env
+VOLCANO_ARK_API_KEY=your-api-key-here
+SECRET_KEY=dev-secret-key-change-in-production
 ```
+
+> 📁 `.env` 文件已被 `.gitignore` 忽略，不会提交到 GitHub
 
 ### 配置文件 (config.py)
 
 ```python
+import os
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 class Config:
-    # 密钥配置
+    # 密钥配置（从环境变量读取）
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-for-mysoullinker'
+    VOLCANO_ARK_API_KEY = os.environ.get('VOLCANO_ARK_API_KEY')
     
     # 数据库配置
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///database/social.db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or \
+        'sqlite:///' + os.path.join(DATABASE_DIR, 'social.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # 火山引擎 AI 配置
-    VOLCANO_ARK_API_KEY = 'your-api-key'
     VOLCANO_ARK_ENDPOINT = 'https://ark.cn-beijing.volces.com/api/v3'
     AI_MODEL_ID = 'doubao-seed-1-6-251015'
     
@@ -265,8 +270,8 @@ class Config:
 | 变量名 | 说明 | 默认值 |
 |--------|------|--------|
 | `SECRET_KEY` | Flask 密钥 | dev-key-for-mysoullinker |
+| `VOLCANO_ARK_API_KEY` | 火山引擎 API Key | 必填，无默认值 |
 | `DATABASE_URI` | 数据库连接字符串 | SQLite 本地文件 |
-| `VOLCANO_ARK_API_KEY` | 火山引擎 API Key | config.py 中默认值 |
 
 ## 📊 数据模型
 

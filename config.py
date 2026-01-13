@@ -1,3 +1,6 @@
+# Application configuration module
+# This file contains all configuration settings for the MySoulLinker application
+
 import os
 
 try:
@@ -6,8 +9,10 @@ try:
 except ImportError:
     pass
 
+# API Key for Volcano Ark service (loaded from environment variables)
 VOLCANO_ARK_API_KEY = None
 
+# Directory configuration
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 DATABASE_DIR = os.path.join(BASE_DIR, 'database')
 os.makedirs(DATABASE_DIR, exist_ok=True)
